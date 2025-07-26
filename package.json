@@ -1,0 +1,19 @@
+{
+  "name": "notion-sync-mono",
+  "module": "index.ts",
+  "type": "module",
+  "private": true,
+  "devDependencies": {
+    "@types/bun": "latest",
+    "@types/dotenv": "^8.2.3"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "@notionhq/client": "^4.0.1",
+    "dotenv": "^17.2.0",
+    "puppeteer": "^24.15.0",
+    "readwise-reader-api": "^0.5.2"
+  }
+}
