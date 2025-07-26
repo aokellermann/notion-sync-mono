@@ -7,9 +7,17 @@ export type QueryDatabaseResponseResult = PageObjectResponse// | PartialPageObje
 export type PageProperties = PageObjectResponse["properties"];
 export type PagePropertyValue = PageProperties[string];
 
+export type DatabaseProperties = Record<string, { type: "rich_text" | "number" | "date" | "select" | "title", select?: { options: { name: string }[] } }>;
+
+declare module "bun" {
+    interface Env {
+        NOTION_TOKEN: string;
+    }
+}
+
 export const getNotionClient = () => {
     return new Client({
-        auth: process.env.NOTION_TOKEN,
+        auth: Bun.env.NOTION_TOKEN,
     });
 }
 
@@ -25,17 +33,20 @@ export const getAllPages = async (client: NotionClient, databaseId: string, curs
         const nextPages = await getAllPages(client, databaseId, pages.next_cursor ?? undefined);
         return [...pages.results, ...nextPages] as QueryDatabaseResponseResult[];
     }
+    console.log("Found", pages.results.length, "pages");
     return pages.results as QueryDatabaseResponseResult[];
 }
 
-export const ensureDatabaseProperties = async (client: NotionClient, databaseId: string, properties: Record<string, string>) => {
-    console.log("Ensuring database properties for database", databaseId);
+export const ensureDatabaseProperties = async (client: NotionClient, databaseId: string, properties: DatabaseProperties) => {
+    console.log("Ensuring database properties for database", databaseId, properties);
+
+    properties = { ...properties, id: { type: "rich_text" }, Name: { type: "title" } };
 
     const existingProperties = await client.databases.retrieve({ database_id: databaseId });
     const propertyObjects = Object.entries(properties).map(([key, value]) => ({
         [key]: {
-            type: value,
-            [value]: {},
+            type: value.type,
+            [value.type]: {},
             name: existingProperties.properties?.[key]?.name,
         },
     }));
@@ -46,7 +57,7 @@ export const ensureDatabaseProperties = async (client: NotionClient, databaseId:
     });
 }
 
-export const createPages = async<T> (client: NotionClient, databaseId: string, pages: T[], buildProperties: (page: T) => CreatePageParameters["properties"]) => {
+export const createPages = async<T>(client: NotionClient, databaseId: string, pages: T[], buildProperties: (page: T) => CreatePageParameters["properties"]) => {
     for (const page of pages) {
         await client.pages.create({
             parent: { type: "database_id", database_id: databaseId },
@@ -56,5 +67,7 @@ export const createPages = async<T> (client: NotionClient, databaseId: string, p
 }
 
 export const getPlainText = (page: PageObjectResponse, property: string) => {
-    return (page.properties[property] as PagePropertyValue & { type: "rich_text"}).rich_text[0]?.plain_text ?? "";
+    return (page.properties[property] as PagePropertyValue & { type: "rich_text" }).rich_text[0]?.plain_text ?? "";
 }
+
+

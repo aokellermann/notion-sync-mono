@@ -1,9 +1,15 @@
 import puppeteer, { Browser } from "puppeteer";
 
+declare module "bun" {
+    interface Env {
+        BROWSER_WS_PATH?: string;
+    }
+}
+
 const port = 9222;
 
 export async function useBrowser<T>(callback: (browser: Browser) => Promise<T>): Promise<T> {
-    if (process.env.BROWSER_WS_PATH) {
+    if (Bun.env.BROWSER_WS_PATH) {
         return await useExistingBrowser(callback);
     } else {
         return await useNewBrowser(callback);

@@ -1,3 +1,9 @@
+declare module "bun" {
+    interface Env {
+        USE_CACHE?: boolean;
+    }
+}
+
 export abstract class Provider<TData> {
     protected cacheFile: string;
 
@@ -8,15 +14,14 @@ export abstract class Provider<TData> {
     protected abstract fetchData(): Promise<TData>;
 
     async getData(): Promise<TData> {
-        if (process.env.USE_CACHE && await Bun.file(this.cacheFile).exists()) {
+        if (Bun.env.USE_CACHE && await Bun.file(this.cacheFile).exists()) {
             console.log(`Using cache from ${this.cacheFile}`);
             const cache = await Bun.file(this.cacheFile).json();
             return cache;
         }
         const data = await this.fetchData();
-        if (process.env.USE_CACHE) {
-            await Bun.file(this.cacheFile).write(JSON.stringify(data));
-        }
+        console.log(`Writing cache to ${this.cacheFile}`);
+        await Bun.write(this.cacheFile, JSON.stringify(data, null, 2));
         return data;
     }
 }

@@ -4,6 +4,12 @@ import { Provider } from "../provider";
 import { setTimeout } from 'timers/promises';
 import path from "path";
 
+declare module "bun" {
+  interface Env {
+    FUNCTION_HEALTH_USERNAME: string;
+    FUNCTION_HEALTH_PASSWORD: string;
+  }
+}
 /**
  * Service class for interacting with Function Health website
  */
@@ -14,8 +20,8 @@ export class FunctionHealthService extends Provider<FunctionHealthData> {
 
   constructor(browser: Browser) {
     super(path.join(__dirname, "data.json"));
-    this.username = process.env.FUNCTION_HEALTH_USERNAME as string;
-    this.password = process.env.FUNCTION_HEALTH_PASSWORD as string;
+    this.username = Bun.env.FUNCTION_HEALTH_USERNAME;
+    this.password = Bun.env.FUNCTION_HEALTH_PASSWORD;
     this.browser = browser;
     
     if (!this.username || !this.password) {
