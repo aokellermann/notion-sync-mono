@@ -7,7 +7,7 @@ export type QueryDatabaseResponseResult = PageObjectResponse// | PartialPageObje
 export type PageProperties = PageObjectResponse["properties"];
 export type PagePropertyValue = PageProperties[string];
 
-export type DatabaseProperties = Record<string, { type: "rich_text" | "number" | "date" | "select" | "title", select?: { options: { name: string }[] } }>;
+export type DatabaseProperties = NonNullable<UpdateDatabaseParameters["properties"]>;
 
 declare module "bun" {
     interface Env {
@@ -40,20 +40,11 @@ export const getAllPages = async (client: NotionClient, databaseId: string, curs
 export const ensureDatabaseProperties = async (client: NotionClient, databaseId: string, properties: DatabaseProperties) => {
     console.log("Ensuring database properties for database", databaseId, properties);
 
-    properties = { ...properties, id: { type: "rich_text" }, Name: { type: "title" } };
+    properties = { ...properties, id: { rich_text: {} }, Name: { title: {} } };
 
-    const existingProperties = await client.databases.retrieve({ database_id: databaseId });
-    const propertyObjects = Object.entries(properties).map(([key, value]) => ({
-        [key]: {
-            type: value.type,
-            [value.type]: {},
-            name: existingProperties.properties?.[key]?.name,
-        },
-    }));
-    const desiredProperties: UpdateDatabaseParameters["properties"] = Object.assign({}, ...propertyObjects);
     await client.databases.update({
         database_id: databaseId,
-        properties: desiredProperties,
+        properties: properties,
     });
 }
 
