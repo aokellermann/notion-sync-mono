@@ -24,7 +24,8 @@ export class FunctionHealthResultsExporter extends Exporter<FunctionHealthData> 
 
         const schema: DatabaseProperties = {
             "date": { date: {} },
-            "biomarker": { select: { options: biomarkerNames } },
+            // "biomarker": { select: { options: biomarkerNames } },
+            "biomarker": { rich_text: {} },
             "category": { multi_select: { options: categoryNames } },
             "value": { rich_text: {} },
             "unit": { rich_text: {} },
@@ -71,7 +72,8 @@ export class FunctionHealthResultsExporter extends Exporter<FunctionHealthData> 
             "Name": { title: [{ type: "text", text: { content: this.getBiomarkerName(page.biomarker.name) + " - " + page.currentResult.dateOfService } }] },
             "id": { type: "rich_text", rich_text: [{ type: "text", text: { content: page.currentResult.id } }] },
             "date": { type: "date", date: { start: page.currentResult.dateOfService } },
-            "biomarker": { type: "select", select: { name: this.getBiomarkerName(page.biomarker.name) } },
+            // "biomarker": { type: "select", select: { name: this.getBiomarkerName(page.biomarker.name) } },
+            "biomarker": { type: "rich_text", rich_text: [{ type: "text", text: { content: this.getBiomarkerName(page.biomarker.name) } }] },
             "category": { type: "multi_select", multi_select: getCategories(page.biomarker).map(category => ({ name: category })) },
             "value": { type: "rich_text", rich_text: [{ type: "text", text: { content: page.currentResult.calculatedResult } }] },
             "unit": { type: "rich_text", rich_text: [{ type: "text", text: { content: page.units } }] },

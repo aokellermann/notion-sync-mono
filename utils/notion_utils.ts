@@ -1,5 +1,5 @@
 import { Client, type DatabaseObjectResponse, type PartialPageObjectResponse, type PageObjectResponse, type PartialDatabaseObjectResponse } from "@notionhq/client";
-import type { UpdateDatabaseParameters, CreatePageParameters } from "@notionhq/client/build/src/api-endpoints";
+import type { UpdateDatabaseParameters, CreatePageParameters, CreatePageResponse } from "@notionhq/client/build/src/api-endpoints";
 
 export type NotionClient = Client;
 export type QueryDatabaseResponseResult = PageObjectResponse// | PartialPageObjectResponse | PartialDatabaseObjectResponse | DatabaseObjectResponse;
@@ -8,6 +8,11 @@ export type PageProperties = PageObjectResponse["properties"];
 export type PagePropertyValue = PageProperties[string];
 
 export type DatabaseProperties = NonNullable<UpdateDatabaseParameters["properties"]>;
+
+export class DatabaseResults {
+    public pagesAdded: PageObjectResponse[] = [];
+    public pagesExisting: QueryDatabaseResponseResult[] = [];
+}
 
 declare module "bun" {
     interface Env {
@@ -33,7 +38,6 @@ export const getAllPages = async (client: NotionClient, databaseId: string, curs
         const nextPages = await getAllPages(client, databaseId, pages.next_cursor ?? undefined);
         return [...pages.results, ...nextPages] as QueryDatabaseResponseResult[];
     }
-    console.log("Found", pages.results.length, "pages");
     return pages.results as QueryDatabaseResponseResult[];
 }
 
@@ -48,13 +52,12 @@ export const ensureDatabaseProperties = async (client: NotionClient, databaseId:
     });
 }
 
-export const createPages = async<T>(client: NotionClient, databaseId: string, pages: T[], buildProperties: (page: T) => CreatePageParameters["properties"]) => {
-    for (const page of pages) {
-        await client.pages.create({
-            parent: { type: "database_id", database_id: databaseId },
-            properties: buildProperties(page),
-        });
-    }
+export const createPages = async<T>(client: NotionClient, databaseId: string, pages: T[], buildProperties: (page: T) => CreatePageParameters["properties"]): Promise<PageObjectResponse[]> => {
+    const createdPages = await Promise.all(pages.map(page => client.pages.create({
+        parent: { type: "database_id", database_id: databaseId },
+        properties: buildProperties(page),
+    })));
+    return createdPages as PageObjectResponse[];
 }
 
 export const getPlainText = (page: PageObjectResponse, property: string) => {

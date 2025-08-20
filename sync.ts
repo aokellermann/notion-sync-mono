@@ -2,9 +2,14 @@ import { getNotionClient } from "./utils/notion_utils";
 import type { Exporter } from "./providers/exporter";
 import { FunctionHealthResultsExporter } from "./providers/function_health/results_exporter";
 import { FunctionHealthService } from "./providers/function_health/provider";
-import type { FunctionHealthData } from "./providers/function_health/types";
 import type { Provider } from "./providers/provider";
 import { useBrowser } from "./utils/puppeteer_utils";
+import { FunctionHealthBiomarkerExporter } from "./providers/function_health/biomarker_exporter";
+import { FunctionHealthBiometricExporter } from "./providers/function_health/biometric_exporter";
+
+function createService<TService extends Provider<TData>, TExporter extends Exporter<TData>, TData>(service: TService, exporter: TExporter[]): [TService, TExporter[]] {
+  return [service, exporter] as [TService, TExporter[]]
+}
 
 if (import.meta.main) {
     (async () => {
@@ -13,7 +18,7 @@ if (import.meta.main) {
         await useBrowser(async (browser) => {
             const notion = getNotionClient();
             const serviceMap = new Map<Provider<any>, Exporter<any>[]>([
-                [new FunctionHealthService(browser), [new FunctionHealthResultsExporter(notion)]] as [Provider<FunctionHealthData>, Exporter<FunctionHealthData>[]]
+                createService(new FunctionHealthService(browser), [ new FunctionHealthBiomarkerExporter(notion), new FunctionHealthBiometricExporter(notion)])
             ]);
 
             for (const [service, exporters] of serviceMap.entries()) {

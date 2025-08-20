@@ -16,6 +16,7 @@ export abstract class Provider<TData> {
     async getData(): Promise<TData> {
         if (Bun.env.USE_CACHE && await Bun.file(this.cacheFile).exists()) {
             console.log(`Using cache from ${this.cacheFile}`);
+            // console.log('File contains', await Bun.file(this.cacheFile).text());
             const cache = await Bun.file(this.cacheFile).json();
             return cache;
         }
