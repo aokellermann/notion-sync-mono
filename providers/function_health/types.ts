@@ -61,7 +61,7 @@ export interface BiomarkerResultsRecord {
   neutral: boolean;
   currentResult: CurrentResult;
   previousResult: CurrentResult | null;
-  pastResults: CurrentResult[] | null;
+  pastResults: CurrentResult[];
   outOfRangeType: string;
   units: string;
   hasCategory: boolean;

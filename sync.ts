@@ -1,6 +1,5 @@
 import { getNotionClient } from "./utils/notion_utils";
 import type { Exporter } from "./providers/exporter";
-import { FunctionHealthResultsExporter } from "./providers/function_health/results_exporter";
 import { FunctionHealthService } from "./providers/function_health/provider";
 import type { Provider } from "./providers/provider";
 import { useBrowser } from "./utils/puppeteer_utils";

@@ -1,5 +1,5 @@
 import { Exporter } from "../exporter";
-import type { Biomarker, FunctionHealthData } from "./types";
+import type { Biomarker, BiomarkerResult, FunctionHealthData } from "./types";
 import { createPages, DatabaseResults, getAllPages, getPlainText, type DatabaseProperties, type NotionClient } from "../../utils/notion_utils";
 import { calculateSyncUpdates } from "../../utils/sync_utils";
 import { State } from "../state";
@@ -42,11 +42,20 @@ export class FunctionHealthBiometricExporter extends Exporter<FunctionHealthData
 
     async writeData(data: FunctionHealthData): Promise<DatabaseResults> {
         const pagesExisting = await getAllPages(this.notion, this.databaseId);
-        const results = data.data.biomarkerResultsRecord;
+        const results: { result: BiomarkerResult, biomarker: Biomarker, units: string }[] = [];
+        for (const record of data.data.biomarkerResultsRecord) {
+            for (const currentResult of record.biomarkerResults) {
+                results.push({
+                    result: currentResult,
+                    biomarker: record.biomarker,
+                    units: record.units,
+                });
+            }
+        }
 
         const { pagesToAdd } = await calculateSyncUpdates(
             pagesExisting, (page) => getPlainText(page, "id"),
-            results, (result) => result.currentResult.id);
+            results, (result) => result.result.id);
 
         const biomarkerIdToNotionId = new Map<string, string>();
         const state = State.instance.providerRecords.get(FunctionHealthBiomarkerExporter.name)!.result!;
@@ -57,13 +66,13 @@ export class FunctionHealthBiometricExporter extends Exporter<FunctionHealthData
 
         const pagesAdded = await createPages(this.notion, this.databaseId, pagesToAdd, (page) => {
             return {
-                "Name": { title: [{ type: "text", text: { content: this.getBiomarkerName(page.biomarker.name) + " - " + page.currentResult.dateOfService } }] },
-                "id": { type: "rich_text", rich_text: [{ type: "text", text: { content: page.currentResult.id } }] },
-                "date": { type: "date", date: { start: page.currentResult.dateOfService } },
+                "Name": { title: [{ type: "text", text: { content: this.getBiomarkerName(page.biomarker.name) + " - " + page.result.dateOfService } }] },
+                "id": { type: "rich_text", rich_text: [{ type: "text", text: { content: page.result.id } }] },
+                "date": { type: "date", date: { start: page.result.dateOfService } },
                 "biomarker": { type: "relation", relation: [{ id: biomarkerIdToNotionId.get(page.biomarker.id)! }] },
-                "value": { type: "rich_text", rich_text: [{ type: "text", text: { content: page.currentResult.calculatedResult } }] },
+                "value": { type: "rich_text", rich_text: [{ type: "text", text: { content: page.result.testResult } }] },
                 "unit": { type: "rich_text", rich_text: [{ type: "text", text: { content: page.units } }] },
-                "inRange": { checkbox: page.currentResult.inRange },
+                "inRange": { checkbox: !page.result.testResultOutOfRange },
             };
         });
 
